@@ -11,7 +11,6 @@ later without touching business logic.
 
 Run with:  streamlit run app/ui/streamlit_app.py
 """
-
 import os
 import sys
 import time
@@ -20,13 +19,23 @@ from pathlib import Path
 
 import streamlit as st
 
-try:
-    for _key, _value in st.secrets.items():
-        os.environ.setdefault(_key, str(_value))
-except Exception:
-    pass  # no secrets.toml locally — .env handles it instead
+# Only load st.secrets if a secrets.toml actually exists (Streamlit Cloud).
+# Locally we rely on .env instead — touching st.secrets when no file exists
+# triggers Streamlit's own "No secrets found" warning as a side effect, which
+# then breaks the set_page_config()-must-be-first rule further down.
+_project_root = Path(__file__).resolve().parents[2]
+_secrets_candidates = [
+    _project_root / ".streamlit" / "secrets.toml",
+    Path.home() / ".streamlit" / "secrets.toml",
+]
+if any(p.exists() for p in _secrets_candidates):
+    try:
+        for _key, _value in st.secrets.items():
+            os.environ.setdefault(_key, str(_value))
+    except Exception:
+        pass
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+sys.path.append(str(_project_root))
 
 from app.agents.business_analyst.agent import BusinessAnalystAgentError, ProjectMetadata
 from app.agents.business_analyst.service import (
