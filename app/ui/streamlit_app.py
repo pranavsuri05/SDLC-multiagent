@@ -12,6 +12,7 @@ later without touching business logic.
 Run with:  streamlit run app/ui/streamlit_app.py
 """
 
+import os
 import sys
 import time
 import uuid
@@ -19,7 +20,12 @@ from pathlib import Path
 
 import streamlit as st
 
-# Allow running as `streamlit run app/ui/streamlit_app.py` from project root.
+try:
+    for _key, _value in st.secrets.items():
+        os.environ.setdefault(_key, str(_value))
+except Exception:
+    pass  # no secrets.toml locally — .env handles it instead
+
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from app.agents.business_analyst.agent import BusinessAnalystAgentError, ProjectMetadata
